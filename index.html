@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Faridabad NDBI 2018-2025</title>
+  <meta name="description" content="Built-up intensity in Faridabad, India, measured with the Normalized Difference Built-up Index (NDBI) from Sentinel-2, January to March composites for 2018 to 2025, with statistical testing, discussion and limitations.">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap header-row">
+    <a class="brand" href="#top">Faridabad NDBI</a>
+    <nav aria-label="Sections">
+      <a href="#map-section">Map</a>
+      <a href="#trend">Trend</a>
+      <a href="#method">Method</a>
+      <a href="#discussion">Discussion</a>
+      <a href="#limitations">Limitations</a>
+      <a href="#data">Data</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero" id="top">
+  <div class="wrap">
+    <p class="eyebrow">CE25M401 &middot; M.Tech Transportation Engineering &middot; Urban remote sensing</p>
+    <h1>Built-up intensity in Faridabad, 2018&ndash;2025</h1>
+    <p class="lead">
+      The Normalized Difference Built-up Index (NDBI) computed from Sentinel-2 surface reflectance
+      in Google Earth Engine, using January&ndash;March median composites over the 40 municipal wards,
+      with a statistical test of whether the city-wide signal changed over eight years.
+    </p>
+    <div class="cards" id="key-findings">
+      <article class="card">
+        <h2>Net change 2018 to 2025</h2>
+        <p class="big" data-bind="netChange">-0.0137</p>
+        <p class="small">Mean NDBI fell from 0.0261 to 0.0124 (NDBI units).</p>
+      </article>
+      <article class="card">
+        <h2>Linear trend</h2>
+        <p class="big" data-bind="slope">-0.00115 / yr</p>
+        <p class="small">OLS, n = 8, <span data-bind="pText">p = 0.640</span>. Not significant.</p>
+      </article>
+      <article class="card">
+        <h2>Year-to-year spread</h2>
+        <p class="big" data-bind="sd">0.0143</p>
+        <p class="small">Standard deviation of the 8 annual means. It is larger than the net change.</p>
+      </article>
+      <article class="card">
+        <h2>Images per composite</h2>
+        <p class="big" data-bind="imgRange">7 &ndash; 19</p>
+        <p class="small">2018 rests on 7 scenes; every other year on 16&ndash;19.</p>
+      </article>
+    </div>
+    <p class="callout">
+      <strong>Reading this result correctly.</strong>
+      The city-wide mean NDBI shows no statistically detectable trend. That is not the same as
+      showing that nothing changed: eight points are too few to detect a small trend, and the mean of an
+      index over a whole city hides where change happens. Sections
+      <a href="#discussion">Discussion</a> and <a href="#limitations">Limitations</a> give the reasoning.
+    </p>
+  </div>
+</section>
+
+<section id="map-section" class="block">
+  <div class="wrap">
+    <h2>Interactive map</h2>
+    <p>
+      Annual January&ndash;March NDBI composites and the 2018 to 2025 difference. Use the slider or
+      the play button to step through the years.
+    </p>
+
+    <div class="controls" role="group" aria-label="Map controls">
+      <label>Layer
+        <select id="mode">
+          <option value="annual">Annual NDBI (Jan&ndash;Mar)</option>
+          <option value="change">Change, 2025 minus 2018</option>
+        </select>
+      </label>
+      <label class="grow">Year: <output id="year-out">2018</output>
+        <input id="year" type="range" min="2018" max="2025" step="1" value="2018">
+      </label>
+      <button id="play" type="button" aria-pressed="false">Play</button>
+      <label>Opacity
+        <input id="opacity" type="range" min="0.1" max="1" step="0.05" value="0.8">
+      </label>
+      <label class="check"><input id="wards-toggle" type="checkbox" checked> Ward boundaries</label>
+    </div>
+
+    <div class="map-frame">
+      <div id="map" role="application" aria-label="Map of Faridabad NDBI"></div>
+      <div class="legend" id="legend" aria-live="polite"></div>
+    </div>
+    <p id="map-status" class="status" role="status"></p>
+  </div>
+</section>
+
+<section id="trend" class="block alt">
+  <div class="wrap">
+    <h2>City-wide trend</h2>
+    <p>
+      Mean NDBI over all 40 wards for each year (reducer: mean, 20 m scale). The dashed line is the
+      ordinary least squares fit. A hollow marker means the composite used fewer than 10 images.
+    </p>
+
+    <div class="chart-grid">
+      <figure>
+        <div id="chart-trend" class="chart" aria-label="Line chart of annual mean NDBI"></div>
+        <figcaption>Figure 1. Annual mean NDBI with linear fit.</figcaption>
+      </figure>
+      <figure>
+        <div id="chart-count" class="chart" aria-label="Bar chart of images per year"></div>
+        <figcaption>Figure 2. Sentinel-2 scenes available per January&ndash;March window.</figcaption>
+      </figure>
+    </div>
+
+    <h3>Annual values</h3>
+    <div class="table-scroll">
+      <table id="table-data">
+        <thead>
+          <tr><th>Year</th><th>Mean NDBI</th><th>Images</th><th>Valid pixels</th><th>OLS fit</th><th>Residual</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h3>Trend statistics (computed in your browser from the table above)</h3>
+    <div class="table-scroll">
+      <table id="table-stats">
+        <thead><tr><th>Quantity</th><th>Value</th><th>Meaning</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h3>Leave-one-year-out slopes</h3>
+    <div class="table-scroll">
+      <table id="table-loo">
+        <thead><tr><th>Year omitted</th><th>Slope (NDBI / yr)</th><th>p-value</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="small">
+      Omitting 2018, the year with only 7 scenes, changes the sign of the slope. The direction of the
+      fitted trend therefore depends on a single observation.
+    </p>
+  </div>
+</section>
+
+<section id="method" class="block">
+  <div class="wrap">
+    <h2>Method</h2>
+    <ol class="steps">
+      <li><strong>Study area.</strong> 40 ward polygons (<code>Faridabad_wards2.geojson</code>), reprojected from EPSG:4979 to EPSG:4326, made valid and flattened to 2D. The original 3D polygons were rejected by Earth Engine (&ldquo;Invalid GeoJSON geometry&rdquo; for all 40 features), which is why the notebook rebuilds them.</li>
+      <li><strong>Imagery.</strong> <code>COPERNICUS/S2_SR_HARMONIZED</code>, filtered to the study area and to 1 January&ndash;31 March for each year from 2018 to 2025.</li>
+      <li><strong>Cloud and quality mask.</strong> The Scene Classification Layer (SCL) is used to drop classes 0 (no data), 1 (saturated or defective), 3 (cloud shadow), 7 (unclassified), 8 and 9 (cloud, medium and high probability), 10 (thin cirrus) and 11 (snow or ice).</li>
+      <li><strong>Index.</strong> Reflectance is scaled by 0.0001, then NDBI = (SWIR1 &minus; NIR) / (SWIR1 + NIR) with SWIR1 = B11 and NIR = B8.</li>
+      <li><strong>Composite.</strong> The per-pixel median of the masked NDBI images, clipped to the boundary, one composite per year.</li>
+      <li><strong>Summaries.</strong> City-wide mean at 20 m for each year; a 2025 minus 2018 difference raster exported at 20 m in EPSG:32643 for QGIS.</li>
+      <li><strong>Inference (added for this page).</strong> OLS slope with a t-test, Sen&rsquo;s slope, Kendall&rsquo;s tau with an exact p-value, and leave-one-out slopes.</li>
+    </ol>
+
+    <h3>Proof 1: NDBI is bounded by &minus;1 and +1</h3>
+    <div class="proof">
+      <p><em>Claim.</em> If SWIR1 = <var>s</var> &ge; 0, NIR = <var>n</var> &ge; 0 and <var>s</var> + <var>n</var> &gt; 0, then
+        &minus;1 &le; (<var>s</var> &minus; <var>n</var>)/(<var>s</var> + <var>n</var>) &le; 1, and NDBI &gt; 0 if and only if <var>s</var> &gt; <var>n</var>.</p>
+      <p><em>Proof.</em>
+        <var>s</var> &minus; <var>n</var> &le; <var>s</var> + <var>n</var> &hArr; &minus;<var>n</var> &le; <var>n</var> &hArr; <var>n</var> &ge; 0, which holds.
+        Also &minus;(<var>s</var> + <var>n</var>) &le; <var>s</var> &minus; <var>n</var> &hArr; &minus;<var>s</var> &le; <var>s</var> &hArr; <var>s</var> &ge; 0, which holds.
+        Dividing both inequalities by <var>s</var> + <var>n</var> &gt; 0 preserves their direction and gives the bounds.
+        The sign of the quotient equals the sign of <var>s</var> &minus; <var>n</var>, since the denominator is positive. &#8718;</p>
+      <p class="small"><em>Consequences.</em> A per-pixel change (NDBI<sub>2025</sub> &minus; NDBI<sub>2018</sub>) lies in [&minus;2, 2], so the &plusmn;0.3 stretch used for the change map is a display choice, not a physical limit. Surface reflectance can be slightly negative after atmospheric correction, so the bound is exact only for non-negative inputs; the notebook additionally masks pixels where |SWIR1 + NIR| &le; 10<sup>-6</sup>.</p>
+    </div>
+  </div>
+</section>
+
+<section id="discussion" class="block alt">
+  <div class="wrap">
+    <h2>Discussion</h2>
+
+    <h3>1. What the numbers say</h3>
+    <p>
+      The city-wide mean NDBI is close to zero in every year (overall mean 0.0101) and moves between
+      &minus;0.0185 (2022) and 0.0261 (2018). The linear slope is &minus;0.00115 per year with a 95%
+      confidence interval of &minus;0.0069 to +0.0046. Because that interval contains zero, and because Kendall&rsquo;s tau
+      (&minus;0.214, exact p = 0.548) agrees with the OLS result (p = 0.640), the data give no statistical
+      evidence of a monotonic trend in the city-wide mean.
+    </p>
+
+    <h3>2. Why the observed decline is within noise</h3>
+    <div class="proof">
+      <p><em>Claim.</em> The net change of &minus;0.0137 between 2018 and 2025 is small relative to the scatter of the annual means, and the slope test cannot reject zero trend.</p>
+      <p><em>Derivation.</em> For the eight consecutive years, S<sub>xx</sub> = &Sigma;(<var>x</var> &minus; x&#772;)&sup2; = <var>n</var>(<var>n</var>&sup2; &minus; 1)/12 = 8 &middot; 63 / 12 = 42.
+        From the data, S<sub>xy</sub> = &minus;0.048444 and S<sub>yy</sub> = 0.0014350.</p>
+      <ul class="plain">
+        <li>Slope <var>b</var> = S<sub>xy</sub>/S<sub>xx</sub> = &minus;0.048444 / 42 = &minus;0.0011534 per year.</li>
+        <li>R&sup2; = S<sub>xy</sub>&sup2; / (S<sub>xx</sub> S<sub>yy</sub>) = 0.0023467 / 0.060272 = 0.0389. Only 3.9% of the variance is explained by a linear trend.</li>
+        <li>SSE = S<sub>yy</sub> &minus; <var>b</var> S<sub>xy</sub> = 0.0014350 &minus; 0.0000559 = 0.0013792, with <var>n</var> &minus; 2 = 6 degrees of freedom, so <var>s</var>&sup2; = 0.00022986 and <var>s</var> = 0.01516.</li>
+        <li>SE(<var>b</var>) = <var>s</var> / &radic;S<sub>xx</sub> = 0.01516 / 6.4807 = 0.002339.</li>
+        <li><var>t</var> = <var>b</var> / SE(<var>b</var>) = &minus;0.493 on 6 d.f., giving a two-sided p = 0.640, well above 0.05.</li>
+        <li>95% interval: <var>b</var> &plusmn; <var>t</var><sub>0.975,6</sub> SE = &minus;0.00115 &plusmn; 2.447 &times; 0.002339 = [&minus;0.00688, +0.00457] per year. Over the 7 annual steps this is a total change between &minus;0.048 and +0.032, which includes zero and values far larger than the point estimate.</li>
+        <li>Minimum detectable slope at 5% significance = 2.447 &times; 0.002339 = 0.00572 per year, or 0.040 over 7 years, about three times the observed net change.</li>
+        <li>If annual values scatter independently about a line with standard deviation <var>s</var>, the difference of two years has standard deviation <var>s</var>&radic;2 = 0.0214. The observed net change is &minus;0.0137 / 0.0214 = &minus;0.64 standard deviations from zero.</li>
+      </ul>
+      <p class="small">The assumptions are independent, equal-variance residuals. The Durbin&ndash;Watson statistic of the residuals is 2.08, which shows no sign of lag-1 autocorrelation, but with n = 8 that check has very little power. &#8718;</p>
+    </div>
+
+    <h3>3. The 2018 endpoint carries the decline</h3>
+    <p>
+      The 2018 composite is built from 7 scenes while the others use 16 to 19, and it also has the highest mean NDBI of the series.
+      Removing 2018 turns the slope from &minus;0.00115 to +0.00055 per year (p = 0.854). The mean of the remaining seven
+      years is 0.0078, so 2018 lies 0.0183 above it, roughly 1.3 times the standard deviation of those seven years (0.0138).
+      The 2018 to 2025 difference map uses 2018 as its baseline, so the same caution applies to it. A baseline built from
+      more scenes, or a multi-year baseline such as the 2018&ndash;2019 median, would be a more defensible reference.
+    </p>
+
+    <h3>4. A flat mean does not mean a static city</h3>
+    <div class="proof">
+      <p><em>Claim.</em> The city-wide mean can stay unchanged even when large areas change land cover.</p>
+      <p><em>Proof.</em> Let the city be partitioned into classes <var>c</var> with area fractions <var>f</var><sub><var>c</var>,<var>t</var></sub> (summing to 1 each year) and class-mean NDBI &mu;<sub><var>c</var>,<var>t</var></sub>. The city mean is
+        <var>M</var><sub><var>t</var></sub> = &Sigma;<sub><var>c</var></sub> <var>f</var><sub><var>c</var>,<var>t</var></sub> &mu;<sub><var>c</var>,<var>t</var></sub>. Then</p>
+      <p class="eq">&Delta;<var>M</var> = &Sigma;<sub><var>c</var></sub> (<var>f</var><sub><var>c</var>,1</sub> &minus; <var>f</var><sub><var>c</var>,0</sub>) &mu;<sub><var>c</var>,0</sub> + &Sigma;<sub><var>c</var></sub> <var>f</var><sub><var>c</var>,1</sub> (&mu;<sub><var>c</var>,1</sub> &minus; &mu;<sub><var>c</var>,0</sub>).</p>
+      <p>Check: (<var>f</var><sub>1</sub> &minus; <var>f</var><sub>0</sub>)&mu;<sub>0</sub> + <var>f</var><sub>1</sub>(&mu;<sub>1</sub> &minus; &mu;<sub>0</sub>) = <var>f</var><sub>1</sub>&mu;<sub>0</sub> &minus; <var>f</var><sub>0</sub>&mu;<sub>0</sub> + <var>f</var><sub>1</sub>&mu;<sub>1</sub> &minus; <var>f</var><sub>1</sub>&mu;<sub>0</sub> = <var>f</var><sub>1</sub>&mu;<sub>1</sub> &minus; <var>f</var><sub>0</sub>&mu;<sub>0</sub>, and summing over <var>c</var> gives &Delta;<var>M</var>.
+        The first sum is the composition effect and the second the within-class effect. If land moves from a class with NDBI &mu;<sub>a</sub> to a class with NDBI &mu;<sub>b</sub> and &mu;<sub>a</sub> &approx; &mu;<sub>b</sub>, the composition effect is (&mu;<sub>b</sub> &minus; &mu;<sub>a</sub>) &Delta;<var>f</var> &approx; 0, whatever the size of &Delta;<var>f</var>. &#8718;</p>
+      <p class="small">In the January&ndash;March window, harvested or fallow fields and bare ground have SWIR reflectance comparable to built surfaces, so conversion of such land to buildings can change the mean very little. NDBI also cannot separate the effects of vegetation growth, soil moisture and construction in a single average.</p>
+    </div>
+
+    <h3>5. What the maps can and cannot show</h3>
+    <p>
+      The annual maps and the difference map are the more informative products because they keep the spatial
+      pattern that the city mean discards. In the difference map, red pixels mark a rise in NDBI and blue pixels a fall.
+      The notebook does not quantify the difference map, so this page makes no claim about where change is concentrated.
+      Zonal statistics per ward, for example <code>reduceRegions</code> with a mean and a count of pixels above a threshold,
+      are the natural next step and are listed under future work.
+    </p>
+
+    <h3>6. Relevance to transport planning</h3>
+    <p>
+      Built-up intensity is one input to land-use analysis, which in turn conditions trip generation and
+      network demand. NDBI alone is not a land-use class, a density or a trip measure. To support corridor or ward-level
+      planning it would need to be combined with ward population, employment or building data, and with buffers
+      around the road and metro alignments being studied.
+    </p>
+
+    <h3>7. Variability between years</h3>
+    <p>
+      The lowest value (2022) and the highest (2018) are separated by 0.0445 NDBI units. This notebook does not include
+      rainfall, soil moisture or vegetation indices, so it cannot say whether wetter or greener conditions explain the low
+      years. That is a hypothesis to test by adding NDVI and a moisture index (for example NDMI) for the same windows, not a result.
+    </p>
+  </div>
+</section>
+
+<section id="limitations" class="block">
+  <div class="wrap">
+    <h2>Limitations</h2>
+
+    <div class="lim-grid">
+      <article class="lim">
+        <h3>Index</h3>
+        <ul>
+          <li>NDBI responds to bare soil, dry fallow land and rock as well as buildings, so it is not a built-up map.</li>
+          <li>SWIR1 is sensitive to moisture, so wet and dry years shift NDBI without any construction.</li>
+          <li>No threshold or classification is applied, so there is no built-up area estimate and no accuracy assessment.</li>
+          <li>Water (SCL class 6) and vegetation are kept in the mean, which pulls the average toward zero and mixes surface types.</li>
+        </ul>
+      </article>
+
+      <article class="lim">
+        <h3>Imagery and compositing</h3>
+        <ul>
+          <li>Only 7 scenes in 2018 against 16&ndash;19 in other years, so the baseline year is the least reliable.</li>
+          <li>One three-month winter window per year ignores crop phenology within the window and other seasons altogether.</li>
+          <li>Winter haze and fog over Delhi NCR can be misclassified by the SCL, leaving residual contamination or masking valid pixels.</li>
+          <li>B8 is a 10 m band and B11 a 20 m band; the index is effectively limited by the coarser band, and statistics are taken at 20 m.</li>
+          <li>The median is taken over per-scene NDBI values. The NDBI of median reflectances would generally differ, because the index is a nonlinear ratio.</li>
+          <li>The harmonized collection corrects the processing-baseline offset introduced in 2022, but consistency across years is assumed, not tested.</li>
+          <li>The valid pixel count is identical (558,394) in every year, which indicates every pixel has at least one clear observation, but not that every pixel has the same number of clear observations.</li>
+        </ul>
+      </article>
+
+      <article class="lim">
+        <h3>Statistics</h3>
+        <ul>
+          <li>n = 8 gives low power: only a slope larger than 0.0057 per year in magnitude would be detected at 5%.</li>
+          <li>The t-test assumes independent, equal-variance residuals; the annual values are composites with unequal image counts and are not equally precise.</li>
+          <li>The test is applied to a spatial mean, not to pixel-level or ward-level series, so it says nothing about local change.</li>
+          <li>Failure to reject zero trend is not evidence that the trend is zero; the confidence interval is wide.</li>
+        </ul>
+      </article>
+
+      <article class="lim">
+        <h3>Boundary data</h3>
+        <ul>
+          <li>The ward layer is stored in EPSG:4979 with a Z coordinate, and <code>Shape_Area</code> is in square degrees, so it should not be used as an area in metres.</li>
+          <li>Wards 24 and 25 have <code>OBJECTID</code> = 0 and <code>Shape_Leng</code> = 0, which suggests attributes were added after the original export.</li>
+          <li>Geometries were simplified with a tolerance of 10<sup>-6</sup> degrees (about 0.1 m), which is negligible, but they are not the original vertices.</li>
+          <li>The notebook writes the cleaned file over the same path it was read from. Keep an untouched copy of the original.</li>
+        </ul>
+      </article>
+
+      <article class="lim">
+        <h3>This website</h3>
+        <ul>
+          <li>A static GitHub Pages site cannot query Earth Engine, so the rasters are pre-exported PNG images with a fixed colour ramp and resolution.</li>
+          <li>Pixel values cannot be read by clicking on the map; only the ramp is shown.</li>
+          <li>The map overlays are positioned by their corner coordinates. At this extent (about 0.2 degrees) the Web Mercator stretch is negligible.</li>
+          <li>Statistics on this page are recomputed from eight values typed into <code>js/data.js</code>; they are not linked live to the notebook.</li>
+        </ul>
+      </article>
+    </div>
+
+    <h3>Suggested improvements</h3>
+    <ul class="plain">
+      <li>Compute ward-level mean NDBI and the share of pixels above a chosen NDBI threshold for each year, then map ward change.</li>
+      <li>Use the NDBI &minus; NDVI difference or the Built-up Index (BUI), or a supervised classifier with reference samples, to separate bare soil from buildings.</li>
+      <li>Add a second season (October&ndash;November) and a multi-year baseline, and report image counts alongside every composite.</li>
+      <li>Mask water explicitly (SCL 6 or MNDWI) and report vegetation, bare and built-up classes separately.</li>
+      <li>Add a nonparametric test per pixel (Mann&ndash;Kendall with Sen&rsquo;s slope) to map where a trend is significant.</li>
+      <li>Overlay metro, rail and highway alignments and compute NDBI change within distance buffers.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="data" class="block alt">
+  <div class="wrap">
+    <h2>Data and reproducibility</h2>
+    <ul class="plain">
+      <li><a href="data/mean_ndbi_2018_2025.csv" download>mean_ndbi_2018_2025.csv</a> (annual means, image counts, valid pixels, copied from the notebook).</li>
+      <li><code>export_for_web.py</code>: rebuilds the composites in Earth Engine and writes the PNG overlays and the ward GeoJSON that this page loads.</li>
+      <li><code>js/stats.js</code>: all statistics shown on this page, runnable in Node for independent checking.</li>
+    </ul>
+
+    <h3>References</h3>
+    <ol class="refs">
+      <li>Zha, Y., Gao, J., Ni, S. (2003). Use of normalized difference built-up index in automatically mapping urban areas from TM imagery. <em>International Journal of Remote Sensing</em>, 24(3), 583&ndash;594.</li>
+      <li>Gorelick, N. et al. (2017). Google Earth Engine: Planetary-scale geospatial analysis for everyone. <em>Remote Sensing of Environment</em>, 202, 18&ndash;27.</li>
+      <li>Sen, P. K. (1968). Estimates of the regression coefficient based on Kendall&rsquo;s tau. <em>Journal of the American Statistical Association</em>, 63(324), 1379&ndash;1389.</li>
+      <li>Kendall, M. G. (1975). <em>Rank Correlation Methods</em>, 4th ed. Charles Griffin, London.</li>
+      <li>European Space Agency. Sentinel-2 Level-2A Scene Classification Layer, Sentinel-2 User Handbook.</li>
+    </ol>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Course project CE25M401. Imagery: Copernicus Sentinel-2 data processed in Google Earth Engine. Base maps: OpenStreetMap contributors, Esri.</p>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/data.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
